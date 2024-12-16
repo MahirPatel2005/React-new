@@ -32,7 +32,7 @@ const Meals = () => {
           <input
             type="text"
             placeholder="Search meals (e.g., pasta, chicken)..."
-            className="w-full p-3 rounded-lg text-gray-200 focus:ring-2 focus:ring-pink-400 transition-all"
+            className="w-full p-3 rounded-lg text-black focus:ring-2 focus:ring-pink-400 transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
