@@ -1,156 +1,144 @@
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Bank = () => {
-  const [bank, setBank] = useState(null);
-  const [searchIFSC, setSearchIFSC] = useState('');
   const [states, setStates] = useState([]);
-  const [selectedState, setSelectedState] = useState('');
   const [districts, setDistricts] = useState([]);
-  const [selectedDistrict, setSelectedDistrict] = useState('');
   const [cities, setCities] = useState([]);
-  const [selectedCity, setSelectedCity] = useState('');
   const [centers, setCenters] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [branchDetails, setBranchDetails] = useState(null);
+  const [bankDetails, setBankDetails] = useState(null);
+  const [ifscCode, setIfscCode] = useState('');
+
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedCenter, setSelectedCenter] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
 
   useEffect(() => {
     fetch('https://bank-apis.justinclicks.com/API/V1/STATE/')
-      .then((response) => response.json())
-      .then((data) => setStates(data))
-      .catch((error) => console.error('Error fetching states:', error));
+      .then(response => response.json())
+      .then(data => setStates(data))
+      .catch(error => console.error('Error fetching states:', error));
   }, []);
 
-  const fetchDistrictsByState = (state) => {
-    fetch(`https://bank-apis.justinclicks.com/API/V1/STATE/${state}/`)
-      .then((response) => response.json())
-      .then((data) => {
-        setDistricts(data);
-      })
-      .catch((error) => console.error('Error fetching districts:', error));
-  };
+  useEffect(() => {
+    if (selectedState) {
+      fetch(`https://bank-apis.justinclicks.com/API/V1/STATE/${selectedState}/`)
+        .then(response => response.json())
+        .then(data => setDistricts(data))
+        .catch(error => console.error('Error fetching districts:', error));
+    }
+  }, [selectedState]);
 
-  const fetchCitiesByDistrict = (state, district) => {
-    fetch(`https://bank-apis.justinclicks.com/API/V1/STATE/${state}/${district}/`)
-      .then((response) => response.json())
-      .then((data) => {
-        setCities(data);
-      })
-      .catch((error) => console.error('Error fetching cities:', error));
-  };
+  useEffect(() => {
+    if (selectedDistrict) {
+      fetch(`https://bank-apis.justinclicks.com/API/V1/STATE/${selectedState}/${selectedDistrict}/`)
+        .then(response => response.json())
+        .then(data => setCities(data))
+        .catch(error => console.error('Error fetching cities:', error));
+    }
+  }, [selectedDistrict]);
 
-  const fetchCentersByLocation = (state, district, city) => {
-    fetch(`https://bank-apis.justinclicks.com/API/V1/STATE/${state}/${district}/${city}/`)
-      .then((response) => response.json())
-      .then((data) => {
-        setCenters(data);
-      })
-      .catch((error) => console.error('Error fetching centers:', error));
-  };
+  useEffect(() => {
+    if (selectedCity) {
+      fetch(`https://bank-apis.justinclicks.com/API/V1/STATE/${selectedState}/${selectedDistrict}/${selectedCity}/`)
+        .then(response => response.json())
+        .then(data => setCenters(data))
+        .catch(error => console.error('Error fetching centers:', error));
+    }
+  }, [selectedCity]);
 
-  const handleStateChange = (event) => {
-    const state = event.target.value;
-    setSelectedState(state);
-    setSelectedDistrict(''); // Reset district and city when state changes
-    setSelectedCity('');
-    fetchDistrictsByState(state);
-  };
+  useEffect(() => {
+    if (selectedCenter) {
+      fetch(`https://bank-apis.justinclicks.com/API/V1/STATE/${selectedState}/${selectedDistrict}/${selectedCity}/${selectedCenter}/`)
+        .then(response => response.json())
+        .then(data => setBranches(data))
+        .catch(error => console.error('Error fetching branches:', error));
+    }
+  }, [selectedCenter]);
 
-  const handleDistrictChange = (event) => {
-    const district = event.target.value;
-    setSelectedDistrict(district);
-    setSelectedCity(''); // Reset city when district changes
-    fetchCitiesByDistrict(selectedState, district);
-  };
+  useEffect(() => {
+    if (selectedBranch) {
+      const branchName = selectedBranch.endsWith('.json') ? selectedBranch : `${selectedBranch}.json`;
+      const branchUrl = `https://bank-apis.justinclicks.com/API/V1/STATE/${selectedState}/${selectedDistrict}/${selectedCity}/${selectedCenter}/${branchName}`;
 
-  const handleCityChange = (event) => {
-    const city = event.target.value;
-    setSelectedCity(city);
-    fetchCentersByLocation(selectedState, selectedDistrict, city);
-  };
+      fetch(branchUrl)
+        .then(response => response.json())
+        .then(data => setBranchDetails(data))
+        .catch(error => console.error('Error fetching branch details:', error));
+    }
+  }, [selectedBranch]);
 
-  const fetchBankByIFSC = (ifsc) => {
-    fetch(`https://bank-apis.justinclicks.com/API/V1/IFSC/${ifsc}/`)
-      .then((response) => response.json())
-      .then((data) => setBank(data))
-      .catch((error) => console.error('Error fetching bank data:', error));
-  };
-
-  const handleSearch = () => {
-    if (searchIFSC) {
-      fetchBankByIFSC(searchIFSC);
+  const fetchBankDetails = () => {
+    if (ifscCode.trim() !== '') {
+      fetch(`https://bank-apis.justinclicks.com/API/V1/IFSC/${ifscCode}/`)
+        .then(response => response.json())
+        .then(data => setBankDetails(data))
+        .catch(error => console.error('Error fetching bank details:', error));
     }
   };
 
-  const handleCenterClick = (center) => {
-    const centerName = center.CENTRE_NAME; // Assuming the center object has a property CENTRE_NAME
-    const url = `https://bank-apis.justinclicks.com/API/V1/STATE/${selectedState}/${selectedDistrict}/${selectedCity}/${centerName}/`;
-    
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        setBank(data); // Assuming the response contains bank details
-      })
-      .catch((error) => console.error('Error fetching center details:', error));
-  };
-
   return (
-    <div>
-      <h2>Search for a Bank</h2>
-      <input 
-        type="text" 
-        placeholder="Search by IFSC" 
-        value={searchIFSC} 
-        onChange={(e) => setSearchIFSC(e.target.value)} 
-      />
-      <button onClick={handleSearch}>Search</button>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4">
+      <h1 className="text-3xl font-bold text-blue-600 mb-6">Bank Branch Finder</h1>
 
-      <h3>Or Search by Location</h3>
-      <select onChange={handleStateChange} value={selectedState}>
-        <option value="">Select State</option>
-        {states.map((state) => (
-          <option key={state} value={state}>{state}</option>
-        ))}
-      </select>
-      <select onChange={handleDistrictChange} value={selectedDistrict}>
-        <option value="">Select District</option>
-        {districts.map((district) => (
-          <option key={district} value={district}>{district}</option>
-        ))}
-      </select>
-      <select onChange={handleCityChange} value={selectedCity}>
-        <option value="">Select City</option>
-        {cities.map((city) => (
-          <option key={city} value={city}>{city}</option>
-        ))}
-      </select>
-
-      {centers.length > 0 && (
-        <div>
-          <h3>Centers:</h3>
-          <ul>
-            {centers.map((center) => (
-              <li key={center.IFSC} onClick={() => handleCenterClick(center)}>
-                {center.BANK} - {center.BRANCH}
-              </li>
-            ))}
-          </ul>
+      {/* IFSC Code Lookup Section */}
+      <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-2xl mb-8">
+        <label className="block text-gray-700 font-medium mb-2">Enter IFSC Code:</label>
+        <div className="flex items-center gap-4">
+          <input
+            type="text"
+            className="border border-gray-300 rounded-md px-4 py-2 w-full focus:ring-2 focus:ring-blue-500"
+            value={ifscCode}
+            onChange={(e) => setIfscCode(e.target.value)}
+            placeholder="Enter IFSC Code"
+          />
+          <button
+            className="bg-blue-600 text-white font-medium px-4 py-2 rounded-md hover:bg-blue-700"
+            onClick={fetchBankDetails}
+          >
+            Get Details
+          </button>
         </div>
-      )}
+        {bankDetails && (
+          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md">
+            <h2 className="text-lg font-bold text-gray-800 mb-2">Bank Details:</h2>
+            <pre className="text-sm text-gray-600 overflow-x-auto">{JSON.stringify(bankDetails, null, 2)}</pre>
+          </div>
+        )}
+      </div>
 
-      {bank && (
-        <div>
-          <h3 style={{ fontSize: '24px' }}><b>Bank Details:</b></h3>
-          <p><strong>Bank:</strong> {bank.BANK}</p>
-          <p><strong>Branch:</strong> {bank.BRANCH}</p>
-          <p><strong>Address:</strong> {bank.ADDRESS}</p>
-          <p><strong>City:</strong> {bank.CITY}</p>
-          <p><strong>District:</strong> {bank.DISTRICT}</p>
-          <p><strong>State:</strong> {bank.STATE}</p>
-          <p><strong>IFSC:</strong> {bank.IFSC}</p>
-          <p><strong>MICR:</strong> {bank.MICR}</p>
-          <p><strong>Contact:</strong> {bank.CONTACT}</p>
-          <p><strong>IMPS:</strong> {bank.IMPS ? 'Yes' : 'No'}</p>
-          <p><strong>NEFT:</strong> {bank.NEFT ? 'Yes' : 'No'}</p>
-          <p><strong>RTGS:</strong> {bank.RTGS ? 'Yes' : 'No'}</p>
-          <p><strong>UPI:</strong> {bank.UPI ? 'Yes' : 'No'}</p>
+      {/* Dropdowns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+        {[{ label: 'State', value: selectedState, options: states, onChange: setSelectedState },
+          { label: 'District', value: selectedDistrict, options: districts, onChange: setSelectedDistrict },
+          { label: 'City', value: selectedCity, options: cities, onChange: setSelectedCity },
+          { label: 'Center', value: selectedCenter, options: centers, onChange: setSelectedCenter },
+          { label: 'Branch', value: selectedBranch, options: branches.map(branch => branch.replace('.json', '')), onChange: setSelectedBranch }]
+          .map(({ label, value, options, onChange }, index) => (
+            <div key={index} className="bg-white shadow-md rounded-lg p-6">
+              <label className="block text-gray-700 font-medium mb-2">Select {label}:</label>
+              <select
+                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+              >
+                <option value="">Select {label}</option>
+                {options.map((option, idx) => (
+                  <option key={idx} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+      </div>
+
+      {/* Branch Details */}
+      {branchDetails && (
+        <div className="mt-8 bg-white shadow-md rounded-lg p-6 w-full max-w-4xl">
+          <h2 className="text-lg font-bold text-gray-800 mb-2">Branch Details:</h2>
+          <pre className="text-sm text-gray-600 overflow-x-auto">{JSON.stringify(branchDetails, null, 2)}</pre>
         </div>
       )}
     </div>
